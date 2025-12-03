@@ -19,7 +19,13 @@ export function AuthProvider({ children }) {
 	const fetchUser = async () => {
 		try {
 			const response = await authAPI.getMe()
-			setUser(response.data)
+			const userData = response.data
+			// Convert relative image URL to absolute if needed
+			if (userData?.image && userData.image.startsWith('/uploads/')) {
+				const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+				userData.image = `${API_BASE_URL}${userData.image}`
+			}
+			setUser(userData)
 		} catch (error) {
 			console.error('Failed to fetch user:', error)
 			localStorage.removeItem('token')

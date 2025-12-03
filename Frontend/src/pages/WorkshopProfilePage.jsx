@@ -27,10 +27,11 @@ import {
 	Send,
 	FileCheck,
 	Briefcase,
+	Camera,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
-import { workshopAPI, authAPI } from '../services/api'
+import { workshopAPI, authAPI, uploadAPI } from '../services/api'
 
 export default function WorkshopProfilePage() {
 	const navigate = useNavigate()
@@ -39,6 +40,7 @@ export default function WorkshopProfilePage() {
 	const [loading, setLoading] = useState(true)
 	const [isEditing, setIsEditing] = useState(false)
 	const [isSaving, setIsSaving] = useState(false)
+	const [isUploadingImage, setIsUploadingImage] = useState(false)
 	const [stats, setStats] = useState({
 		totalRequests: 0,
 		activeOffers: 0,
@@ -60,6 +62,7 @@ export default function WorkshopProfilePage() {
 		postalCode: '',
 		website: '',
 		description: '',
+		image: '',
 	})
 	const [originalProfileData, setOriginalProfileData] = useState({})
 
@@ -103,6 +106,17 @@ export default function WorkshopProfilePage() {
 			const profileResponse = await workshopAPI.getProfile()
 			if (profileResponse.data) {
 				const { user: userData, workshop: workshopData } = profileResponse.data
+				let imageUrl = userData?.image || ''
+				
+				// Convert relative URL to absolute URL if needed
+				if (imageUrl) {
+					if (imageUrl.startsWith('/uploads/')) {
+						const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+						imageUrl = `${API_BASE_URL}${imageUrl}`
+					}
+					// If it's already a full URL, use it as is
+				}
+				
 				const profile = {
 					name: userData?.name || '',
 					email: userData?.email || workshopData?.email || '',
@@ -114,6 +128,7 @@ export default function WorkshopProfilePage() {
 					postalCode: workshopData?.postalCode || '',
 					website: workshopData?.website || '',
 					description: workshopData?.description || '',
+					image: imageUrl,
 				}
 				setProfileData(profile)
 				setOriginalProfileData(profile)
@@ -180,6 +195,74 @@ export default function WorkshopProfilePage() {
 		setIsEditing(false)
 	}
 
+	const handleImageChange = async (e) => {
+		const file = e.target.files?.[0]
+		if (!file) return
+
+		// Validate file type
+		if (!file.type.startsWith('image/')) {
+			toast.error('Please select a valid image file')
+			return
+		}
+
+		// Validate file size (max 5MB)
+		if (file.size > 5 * 1024 * 1024) {
+			toast.error('Image size should be less than 5MB')
+			return
+		}
+
+		setIsUploadingImage(true)
+		try {
+			const formData = new FormData()
+			formData.append('file', file)
+
+			const response = await uploadAPI.uploadFile(formData)
+			let imageUrl = response.data?.fileUrl || response.data?.url || response.data?.location
+
+			if (imageUrl) {
+				// Convert relative URL to absolute URL if needed
+				if (imageUrl.startsWith('/uploads/')) {
+					const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+					imageUrl = `${API_BASE_URL}${imageUrl}`
+				}
+				
+				// Update profile with new image
+				const userId = user._id || user.id
+				const updateResponse = await authAPI.updateProfile(userId, { image: imageUrl })
+				
+				// Get the updated image URL from response (might be different format)
+				const updatedImageUrl = updateResponse.data?.image || imageUrl
+				
+				// Update local state immediately
+				setProfileData((prev) => ({ ...prev, image: updatedImageUrl }))
+				setOriginalProfileData((prev) => ({ ...prev, image: updatedImageUrl }))
+				toast.success('Profile image updated successfully')
+				
+				// Refresh user data (this will update the user context)
+				if (fetchUser) {
+					await fetchUser()
+				}
+				
+				// Refresh profile data but preserve the image we just set
+				const currentImage = updatedImageUrl
+				await fetchData()
+				// Ensure image is preserved after fetch
+				setProfileData((prev) => ({ ...prev, image: currentImage }))
+			} else {
+				toast.error('Failed to get image URL from upload response')
+			}
+		} catch (error) {
+			console.error('Failed to upload image:', error)
+			toast.error('Failed to upload image. Please try again.')
+		} finally {
+			setIsUploadingImage(false)
+			// Reset file input
+			if (e.target) {
+				e.target.value = ''
+			}
+		}
+	}
+
 	if (authLoading || loading) {
 		return (
 			<div className="min-h-screen bg-gray-50 flex items-center justify-center pt-20">
@@ -206,13 +289,66 @@ export default function WorkshopProfilePage() {
 				{/* Header Section */}
 				<div className="mb-8">
 					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-						<div>
-							<h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-								{t('workshop.profile.title') || 'Profile'}
-							</h1>
-							<p className="text-gray-600 text-sm sm:text-base">
-								{t('workshop.profile.subtitle') || 'Manage your workshop profile and view statistics'}
-							</p>
+					<div className="flex items-center gap-4">
+						<div className="relative group">
+							{profileData.image && profileData.image.trim() !== '' ? (
+								<img 
+									src={profileData.image} 
+									alt={profileData.name || profileData.companyName || 'Profile'} 
+									className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-blue-100 shadow-lg"
+									onError={(e) => {
+										// If image fails to load, hide image and show default
+										const parent = e.target.parentElement
+										e.target.style.display = 'none'
+										const fallback = parent.querySelector('.profile-image-fallback')
+										if (fallback) {
+											fallback.style.display = 'flex'
+										}
+									}}
+									onLoad={(e) => {
+										// Hide fallback when image loads successfully
+										const parent = e.target.parentElement
+										const fallback = parent.querySelector('.profile-image-fallback')
+										if (fallback) {
+											fallback.style.display = 'none'
+										}
+									}}
+								/>
+							) : null}
+							<div 
+								className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center border-4 border-blue-100 shadow-lg profile-image-fallback ${profileData.image && profileData.image.trim() !== '' ? 'hidden' : ''}`}
+							>
+								<Building2 className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
+							</div>
+							<button
+								type="button"
+								onClick={() => document.getElementById('profile-image-input')?.click()}
+								disabled={isUploadingImage}
+								className="absolute bottom-0 right-0 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+								title="Change profile image"
+							>
+								{isUploadingImage ? (
+									<div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+								) : (
+									<Camera className="w-4 h-4" />
+								)}
+							</button>
+							<input
+								id="profile-image-input"
+								type="file"
+								accept="image/*"
+								onChange={handleImageChange}
+								className="hidden"
+							/>
+						</div>
+							<div>
+								<h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+									{t('workshop.profile.title') || 'Profile'}
+								</h1>
+								<p className="text-gray-600 text-sm sm:text-base">
+									{t('workshop.profile.subtitle') || 'Manage your workshop profile and view statistics'}
+								</p>
+							</div>
 						</div>
 						{!isEditing && (
 							<Button
@@ -231,16 +367,18 @@ export default function WorkshopProfilePage() {
 					<Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
 						<CardContent className="p-6">
 							<div className="flex items-center justify-between mb-4">
-								<div className="p-3 bg-blue-100 rounded-lg">
-									<Users className="w-5 h-5 text-blue-600" />
+								<div className="p-3 bg-amber-100 rounded-lg">
+									<DollarSign className="w-5 h-5 text-amber-600" />
 								</div>
-								<span className="text-2xl font-bold text-gray-900">{stats.totalRequests}</span>
+								<span className="text-2xl font-bold text-gray-900">
+									{formatPrice(stats.totalRevenue)}
+								</span>
 							</div>
 							<h3 className="text-sm font-semibold text-gray-900 mb-1">
-								{t('workshop.profile.stats.total_requests') || 'Total Requests'}
+								{t('workshop.profile.stats.total_revenue') || 'Total Revenue'}
 							</h3>
 							<p className="text-xs text-gray-500">
-								{t('workshop.profile.stats.total_requests_desc') || 'Available requests'}
+								{t('workshop.profile.stats.total_revenue_desc') || 'From completed jobs'}
 							</p>
 						</CardContent>
 					</Card>
@@ -275,59 +413,6 @@ export default function WorkshopProfilePage() {
 							</h3>
 							<p className="text-xs text-gray-500">
 								{t('workshop.profile.stats.completed_jobs_desc') || 'Successfully completed'}
-							</p>
-						</CardContent>
-					</Card>
-
-					<Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-						<CardContent className="p-6">
-							<div className="flex items-center justify-between mb-4">
-								<div className="p-3 bg-amber-100 rounded-lg">
-									<DollarSign className="w-5 h-5 text-amber-600" />
-								</div>
-								<span className="text-2xl font-bold text-gray-900">
-									{formatPrice(stats.totalRevenue)}
-								</span>
-							</div>
-							<h3 className="text-sm font-semibold text-gray-900 mb-1">
-								{t('workshop.profile.stats.total_revenue') || 'Total Revenue'}
-							</h3>
-							<p className="text-xs text-gray-500">
-								{t('workshop.profile.stats.total_revenue_desc') || 'From completed jobs'}
-							</p>
-						</CardContent>
-					</Card>
-
-					<Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-						<CardContent className="p-6">
-							<div className="flex items-center justify-between mb-4">
-								<div className="p-3 bg-purple-100 rounded-lg">
-									<FileCheck className="w-5 h-5 text-purple-600" />
-								</div>
-								<span className="text-2xl font-bold text-gray-900">{stats.completedContracts}</span>
-							</div>
-							<h3 className="text-sm font-semibold text-gray-900 mb-1">
-								{t('workshop.profile.stats.completed_contracts') || 'Completed Contracts'}
-							</h3>
-							<p className="text-xs text-gray-500">
-								{t('workshop.profile.stats.completed_contracts_desc') || 'Successfully completed'}
-							</p>
-						</CardContent>
-					</Card>
-
-					<Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-						<CardContent className="p-6">
-							<div className="flex items-center justify-between mb-4">
-								<div className="p-3 bg-pink-100 rounded-lg">
-									<Send className="w-5 h-5 text-pink-600" />
-								</div>
-								<span className="text-2xl font-bold text-gray-900">{stats.proposalsSent}</span>
-							</div>
-							<h3 className="text-sm font-semibold text-gray-900 mb-1">
-								{t('workshop.profile.stats.proposals_sent') || 'Proposals Sent'}
-							</h3>
-							<p className="text-xs text-gray-500">
-								{t('workshop.profile.stats.proposals_sent_desc') || 'Total proposals sent'}
 							</p>
 						</CardContent>
 					</Card>

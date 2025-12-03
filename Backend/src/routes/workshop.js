@@ -260,6 +260,7 @@ router.get('/profile', authenticate, requireRole('WORKSHOP'), async (req, res) =
 				name: user.name,
 				email: user.email,
 				phone: user.phone,
+				image: user.image,
 			},
 			workshop: {
 				companyName: workshop.companyName,

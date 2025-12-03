@@ -70,7 +70,7 @@ export default function WorkshopContractsPage() {
 				setContracts(accepted)
 			}
 			
-			// Fetch bookings separately, handle error gracefully
+			// Fetch bookings separately to check completion status
 			try {
 				const bookingsResponse = await bookingsAPI.getByWorkshopMe()
 				if (bookingsResponse.data) {
@@ -79,7 +79,6 @@ export default function WorkshopContractsPage() {
 				}
 			} catch (bookingsError) {
 				console.warn('Failed to fetch bookings:', bookingsError)
-				// Continue without bookings - contracts will still show
 				setBookings([])
 			}
 		} catch (error) {
@@ -95,18 +94,71 @@ export default function WorkshopContractsPage() {
 	// Filter contracts based on active tab
 	const getFilteredContracts = () => {
 		if (activeTab === 'current') {
-			// Current contracts: ACCEPTED offers that don't have a DONE booking
+			// Current contracts: ACCEPTED offers where booking is NOT DONE AND request is NOT COMPLETED
+			// When offer is accepted, it shows in current contracts
+			// When customer completes job, booking status becomes 'DONE' and request status becomes 'COMPLETED'
+			// Contract should then move to completed tab
 			return contracts.filter(offer => {
 				const offerId = offer._id || offer.id
-				const booking = bookings.find(b => (b.offerId?._id || b.offerId?.id || b.offerId) === offerId)
-				return !booking || (booking.status !== 'DONE')
+				if (!offerId) return false
+				
+				// Find matching booking by offerId
+				const booking = bookings.find(b => {
+					let bookingOfferId = null
+					if (b.offerId && typeof b.offerId === 'object' && b.offerId !== null) {
+						bookingOfferId = b.offerId._id || b.offerId.id
+					} else if (b.offerId) {
+						bookingOfferId = b.offerId
+					}
+					if (!bookingOfferId) return false
+					return String(bookingOfferId) === String(offerId)
+				})
+				
+				// Check booking status
+				const bookingStatus = booking?.status?.toUpperCase()
+				const isBookingDone = booking && bookingStatus === 'DONE'
+				
+				// Check request status (when booking is DONE, request status becomes COMPLETED)
+				const request = offer.requestId || offer.request
+				const requestStatus = request?.status?.toUpperCase()
+				const isRequestCompleted = requestStatus === 'COMPLETED'
+				
+				// Show in current ONLY if:
+				// 1. Booking is NOT DONE, AND
+				// 2. Request is NOT COMPLETED
+				// If either is true, it should show in completed tab
+				return !isBookingDone && !isRequestCompleted
 			})
 		} else {
-			// Completed contracts: ACCEPTED offers with DONE booking
+			// Completed contracts: ACCEPTED offers where booking status is DONE OR request status is COMPLETED
+			// When customer completes job, booking status becomes 'DONE' and request status becomes 'COMPLETED'
 			return contracts.filter(offer => {
 				const offerId = offer._id || offer.id
-				const booking = bookings.find(b => (b.offerId?._id || b.offerId?.id || b.offerId) === offerId)
-				return booking && booking.status === 'DONE'
+				if (!offerId) return false
+				
+				// Find matching booking by offerId
+				const booking = bookings.find(b => {
+					let bookingOfferId = null
+					if (b.offerId && typeof b.offerId === 'object' && b.offerId !== null) {
+						bookingOfferId = b.offerId._id || b.offerId.id
+					} else if (b.offerId) {
+						bookingOfferId = b.offerId
+					}
+					if (!bookingOfferId) return false
+					return String(bookingOfferId) === String(offerId)
+				})
+				
+				// Check booking status
+				const bookingStatus = booking?.status?.toUpperCase()
+				const isBookingDone = booking && bookingStatus === 'DONE'
+				
+				// Check request status (when booking is DONE, request status becomes COMPLETED)
+				const request = offer.requestId || offer.request
+				const requestStatus = request?.status?.toUpperCase()
+				const isRequestCompleted = requestStatus === 'COMPLETED'
+				
+				// Show if booking is DONE OR request is COMPLETED
+				return isBookingDone || isRequestCompleted
 			})
 		}
 	}
@@ -147,6 +199,30 @@ export default function WorkshopContractsPage() {
 	useEffect(() => {
 		if (user && user.role === 'WORKSHOP') {
 			fetchContracts()
+		}
+	}, [user])
+
+	// Refresh data when tab changes to get latest booking status
+	useEffect(() => {
+		if (user && user.role === 'WORKSHOP' && !loading) {
+			fetchContracts()
+		}
+	}, [activeTab])
+
+	// Refresh data when page comes into focus (in case customer completed job while workshop had page open)
+	useEffect(() => {
+		const handleFocus = () => {
+			if (user && user.role === 'WORKSHOP' && document.visibilityState === 'visible') {
+				fetchContracts()
+			}
+		}
+		
+		window.addEventListener('focus', handleFocus)
+		document.addEventListener('visibilitychange', handleFocus)
+		
+		return () => {
+			window.removeEventListener('focus', handleFocus)
+			document.removeEventListener('visibilitychange', handleFocus)
 		}
 	}, [user])
 
@@ -303,7 +379,7 @@ export default function WorkshopContractsPage() {
 														<CardDescription className="flex items-center gap-1.5 text-xs text-gray-600">
 															<Calendar className="w-3.5 h-3.5 flex-shrink-0" />
 															<span className="truncate">
-																Accepted on {formatDate(new Date(offer.createdAt))}
+																{t('workshop.contracts.accepted_on') || 'Accepted on'} {formatDate(new Date(offer.createdAt || offer.offerId?.createdAt))}
 															</span>
 														</CardDescription>
 													</div>
@@ -382,14 +458,41 @@ export default function WorkshopContractsPage() {
 											{customer && (
 												<div className="p-3 sm:p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg border border-amber-200">
 													<h4 className="font-semibold text-xs sm:text-sm text-gray-900 mb-2.5 flex items-center gap-2">
-														<div className="p-1 rounded-lg bg-amber-100">
+														{customer.image ? (
+															<img 
+																src={customer.image.startsWith('/uploads/') ? `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${customer.image}` : customer.image} 
+																alt={customer.name || 'Customer'} 
+																className="w-6 h-6 rounded-full object-cover border-2 border-amber-200"
+																onError={(e) => {
+																	e.target.style.display = 'none'
+																	e.target.nextElementSibling.style.display = 'flex'
+																}}
+															/>
+														) : null}
+														<div className={`p-1 rounded-lg bg-amber-100 ${customer.image ? 'hidden' : ''}`}>
 															<User className="w-3.5 h-3.5 text-amber-600" />
 														</div>
 														Customer Information
 													</h4>
 													<div className="space-y-1.5 pl-7">
-														<div className="text-sm font-bold text-gray-900">
-															{customer.name || 'N/A'}
+														<div className="flex items-center gap-2">
+															{customer.image ? (
+																<img 
+																	src={customer.image.startsWith('/uploads/') ? `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${customer.image}` : customer.image} 
+																	alt={customer.name || 'Customer'} 
+																	className="w-8 h-8 rounded-full object-cover border-2 border-amber-200 flex-shrink-0"
+																	onError={(e) => {
+																		e.target.style.display = 'none'
+																		e.target.nextElementSibling.style.display = 'flex'
+																	}}
+																/>
+															) : null}
+															<div className={`w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center flex-shrink-0 ${customer.image ? 'hidden' : ''}`}>
+																<User className="w-4 h-4 text-white" />
+															</div>
+															<div className="text-sm font-bold text-gray-900">
+																{customer.name || 'N/A'}
+															</div>
 														</div>
 														{customer.email && (
 															<div className="flex items-center gap-1.5 text-xs text-gray-600">
@@ -409,7 +512,7 @@ export default function WorkshopContractsPage() {
 										</div>
 
 										{/* Note */}
-										{offer.note && (
+										{(offer.note || offer.offerId?.note) && (
 											<div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
 												<div className="flex items-start gap-2">
 													<FileText className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
@@ -417,7 +520,7 @@ export default function WorkshopContractsPage() {
 														<p className="text-xs font-medium text-gray-700 mb-1">
 															{t('workshop.contracts.note') || 'Note'}
 														</p>
-														<p className="text-xs text-gray-600">{offer.note}</p>
+														<p className="text-xs text-gray-600">{offer.note || offer.offerId?.note}</p>
 													</div>
 												</div>
 											</div>

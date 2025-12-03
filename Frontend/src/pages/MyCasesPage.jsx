@@ -578,6 +578,20 @@ export default function MyCasesPage() {
 																		>
 																			<div className="flex-1 min-w-0 pr-2">
 																				<div className="flex items-center gap-2">
+																					{workshop?.userId?.image || workshop?.user?.image ? (
+																						<img 
+																							src={((workshop?.userId?.image || workshop?.user?.image).startsWith('/uploads/') ? `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${workshop?.userId?.image || workshop?.user?.image}` : (workshop?.userId?.image || workshop?.user?.image))} 
+																							alt={workshop?.companyName || 'Workshop'} 
+																							className="w-6 h-6 rounded-full object-cover border border-gray-200 flex-shrink-0"
+																							onError={(e) => {
+																								e.target.style.display = 'none'
+																								e.target.nextElementSibling.style.display = 'flex'
+																							}}
+																						/>
+																					) : null}
+																					<div className={`w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center flex-shrink-0 ${workshop?.userId?.image || workshop?.user?.image ? 'hidden' : ''}`}>
+																						<Building2 className="w-3.5 h-3.5 text-white" />
+																					</div>
 																					<p className="font-semibold text-xs sm:text-sm text-gray-900 truncate">
 																						{workshop?.companyName || 'Workshop'}
 																					</p>

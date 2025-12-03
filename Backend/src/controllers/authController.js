@@ -158,7 +158,7 @@ export const getMe = async (req, res) => {
 export const updateProfile = async (req, res) => {
 	try {
 		const { id } = req.params
-		const { name, email, phone, address, city, postalCode, country } = req.body
+		const { name, email, phone, address, city, postalCode, country, image } = req.body
 
 		// Check if user is updating their own profile or is admin
 		if (req.user._id.toString() !== id && req.user.role !== 'ADMIN') {
@@ -189,6 +189,7 @@ export const updateProfile = async (req, res) => {
 		if (city !== undefined) user.city = city
 		if (postalCode !== undefined) user.postalCode = postalCode
 		if (country !== undefined) user.country = country
+		if (image !== undefined) user.image = image
 
 		await user.save()
 

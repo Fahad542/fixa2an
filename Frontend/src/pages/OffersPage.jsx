@@ -20,6 +20,8 @@ import {
 	Car,
 	AlertCircle,
 	Calendar,
+	Building2,
+	User,
 } from 'lucide-react'
 
 export default function OffersPage() {
@@ -183,8 +185,19 @@ export default function OffersPage() {
 				<div className="mb-6 sm:mb-8">
 					<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
 						<div className="flex items-center gap-2 sm:gap-3">
-							<div className="p-2 bg-[#1C3F94] rounded-lg shadow-md">
-								<Star className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+							{user?.image && user.image.trim() !== '' ? (
+								<img 
+									src={user.image} 
+									alt={user.name || 'You'} 
+									className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover border-4 border-blue-100 shadow-lg"
+									onError={(e) => {
+										e.target.style.display = 'none'
+										e.target.nextElementSibling.style.display = 'flex'
+									}}
+								/>
+							) : null}
+							<div className={`p-2 bg-[#1C3F94] rounded-lg shadow-md ${user?.image && user.image.trim() !== '' ? 'hidden' : ''}`}>
+								<User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
 							</div>
 							<div>
 								<h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-1">
@@ -245,8 +258,19 @@ export default function OffersPage() {
 										<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
 											<div className="flex-1 min-w-0">
 												<div className="flex items-center gap-2 mb-1.5">
-													<div className="p-1.5 rounded-lg flex-shrink-0 shadow-md" style={{ backgroundColor: '#1C3F94', color: '#FFFFFF' }}>
-														<Car className="w-4 h-4" />
+													{workshop?.userId?.image || workshop?.user?.image ? (
+														<img 
+															src={(workshop?.userId?.image || workshop?.user?.image).startsWith('/uploads/') ? `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${workshop?.userId?.image || workshop?.user?.image}` : (workshop?.userId?.image || workshop?.user?.image)} 
+															alt={workshop?.companyName || 'Workshop'} 
+															className="w-10 h-10 rounded-lg object-cover border-2 border-gray-200 flex-shrink-0 shadow-md"
+															onError={(e) => {
+																e.target.style.display = 'none'
+																e.target.nextElementSibling.style.display = 'flex'
+															}}
+														/>
+													) : null}
+													<div className={`p-1.5 rounded-lg flex-shrink-0 shadow-md ${workshop?.userId?.image || workshop?.user?.image ? 'hidden' : ''}`} style={{ backgroundColor: '#1C3F94', color: '#FFFFFF' }}>
+														<Building2 className="w-4 h-4" />
 													</div>
 													<div className="min-w-0 flex-1">
 														<CardTitle className="text-base sm:text-lg font-bold text-gray-900 mb-1 truncate">

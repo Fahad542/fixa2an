@@ -332,7 +332,18 @@ export default function WorkshopDashboardPage() {
 																</h3>
 																<div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-gray-600">
 																	<div className="flex items-center gap-1.5">
-																		<Users className="w-4 h-4 flex-shrink-0" style={{ color: '#1C3F94' }} />
+																		{customer?.image ? (
+																			<img 
+																				src={customer.image.startsWith('/uploads/') ? `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${customer.image}` : customer.image} 
+																				alt={customer?.name || 'Customer'} 
+																				className="w-5 h-5 rounded-full object-cover border border-gray-200 flex-shrink-0"
+																				onError={(e) => {
+																					e.target.style.display = 'none'
+																					e.target.nextElementSibling.style.display = 'flex'
+																				}}
+																			/>
+																		) : null}
+																		<Users className={`w-4 h-4 flex-shrink-0 ${customer?.image ? 'hidden' : ''}`} style={{ color: '#1C3F94' }} />
 																		<span className="truncate font-medium">{customer?.name || 'Customer'}</span>
 																	</div>
 																	<span className="text-gray-400">•</span>

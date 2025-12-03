@@ -332,14 +332,41 @@ export default function WorkshopProposalsPage() {
 											{customer && (
 												<div className="p-3 sm:p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg border border-amber-200">
 													<h4 className="font-semibold text-xs sm:text-sm text-gray-900 mb-2.5 flex items-center gap-2">
-														<div className="p-1 rounded-lg bg-amber-100">
+														{customer.image ? (
+															<img 
+																src={customer.image.startsWith('/uploads/') ? `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${customer.image}` : customer.image} 
+																alt={customer.name || 'Customer'} 
+																className="w-6 h-6 rounded-full object-cover border-2 border-amber-200"
+																onError={(e) => {
+																	e.target.style.display = 'none'
+																	e.target.nextElementSibling.style.display = 'flex'
+																}}
+															/>
+														) : null}
+														<div className={`p-1 rounded-lg bg-amber-100 ${customer.image ? 'hidden' : ''}`}>
 															<User className="w-3.5 h-3.5 text-amber-600" />
 														</div>
 														Customer Information
 													</h4>
 													<div className="space-y-1.5 pl-7">
-														<div className="text-sm font-bold text-gray-900">
-															{customer.name || 'N/A'}
+														<div className="flex items-center gap-2">
+															{customer.image ? (
+																<img 
+																	src={customer.image.startsWith('/uploads/') ? `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${customer.image}` : customer.image} 
+																	alt={customer.name || 'Customer'} 
+																	className="w-8 h-8 rounded-full object-cover border-2 border-amber-200 flex-shrink-0"
+																	onError={(e) => {
+																		e.target.style.display = 'none'
+																		e.target.nextElementSibling.style.display = 'flex'
+																	}}
+																/>
+															) : null}
+															<div className={`w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center flex-shrink-0 ${customer.image ? 'hidden' : ''}`}>
+																<User className="w-4 h-4 text-white" />
+															</div>
+															<div className="text-sm font-bold text-gray-900">
+																{customer.name || 'N/A'}
+															</div>
 														</div>
 														{customer.email && (
 															<div className="flex items-center gap-1.5 text-xs text-gray-600">

@@ -213,7 +213,20 @@ function Navbar() {
 												: 'text-white/80 bg-white/10 backdrop-blur-sm hover:bg-white/20'
 										}`}
 									>
-										<User className="w-4 h-4" />
+										{user.image && user.image.trim() !== '' ? (
+											<img 
+												src={user.image} 
+												alt={user.name || 'User'} 
+												className="w-6 h-6 rounded-full object-cover border border-gray-200"
+												onError={(e) => {
+													e.target.style.display = 'none'
+													e.target.nextElementSibling.style.display = 'flex'
+												}}
+											/>
+										) : null}
+										<div className={`w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center ${user.image && user.image.trim() !== '' ? 'hidden' : ''}`}>
+											<User className="w-3.5 h-3.5 text-white" />
+										</div>
 										<span className="text-sm font-medium">{user.name || user.email}</span>
 										<ChevronDown className={`w-4 h-4 transition-transform duration-200 ${userDropdownOpen ? 'rotate-180' : ''}`} />
 									</button>
@@ -424,7 +437,18 @@ function Navbar() {
 											onClick={() => setUserDropdownOpen(!userDropdownOpen)}
 											className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
 										>
-											<div className="w-8 h-8 rounded-full bg-[#1C3F94] flex items-center justify-center flex-shrink-0">
+											{user.image && user.image.trim() !== '' ? (
+												<img 
+													src={user.image} 
+													alt={user.name || 'User'} 
+													className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
+													onError={(e) => {
+														e.target.style.display = 'none'
+														e.target.nextElementSibling.style.display = 'flex'
+													}}
+												/>
+											) : null}
+											<div className={`w-8 h-8 rounded-full bg-[#1C3F94] flex items-center justify-center flex-shrink-0 ${user.image && user.image.trim() !== '' ? 'hidden' : ''}`}>
 												<User className="w-4 h-4 text-white" />
 											</div>
 											<div className="flex-1 min-w-0 text-left">
