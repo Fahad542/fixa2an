@@ -1,12 +1,14 @@
 import axios from 'axios'
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+import { API_BASE_URL } from '../config/api.js'
 
 const api = axios.create({
 	baseURL: API_BASE_URL,
 	headers: {
 		'Content-Type': 'application/json',
+		// Skip ngrok browser warning for free plan
+		'ngrok-skip-browser-warning': 'true',
 	},
+	timeout: 30000, // 30 second timeout
 })
 
 // Add token to requests if available
@@ -28,7 +30,18 @@ api.interceptors.response.use(
 			return Promise.reject({
 				...error,
 				response: {
-					data: { message: 'Cannot connect to server. Please make sure the backend is running on http://localhost:4000' }
+					data: { message: 'Cannot connect to server. Please make sure the backend is running and ngrok tunnel is active.' }
+				}
+			})
+		}
+		
+		// Handle timeout errors
+		if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+			console.error('Request timeout - server may be slow or ngrok tunnel may be inactive', error)
+			return Promise.reject({
+				...error,
+				response: {
+					data: { message: 'Request timed out. Please check your ngrok tunnel and try again.' }
 				}
 			})
 		}

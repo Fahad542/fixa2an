@@ -27,6 +27,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import { requestsAPI, bookingsAPI, api } from '../services/api'
+import { getFullUrl } from '../config/api.js'
 
 export default function MyCasesPage() {
 	const navigate = useNavigate()
@@ -580,7 +581,7 @@ export default function MyCasesPage() {
 																				<div className="flex items-center gap-2">
 																					{workshop?.userId?.image || workshop?.user?.image ? (
 																						<img 
-																							src={((workshop?.userId?.image || workshop?.user?.image).startsWith('/uploads/') ? `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${workshop?.userId?.image || workshop?.user?.image}` : (workshop?.userId?.image || workshop?.user?.image))} 
+																							src={getFullUrl(workshop?.userId?.image || workshop?.user?.image)} 
 																							alt={workshop?.companyName || 'Workshop'} 
 																							className="w-6 h-6 rounded-full object-cover border border-gray-200 flex-shrink-0"
 																							onError={(e) => {

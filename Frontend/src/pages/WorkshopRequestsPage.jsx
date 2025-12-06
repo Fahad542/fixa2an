@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import { requestsAPI } from '../services/api'
+import { getFullUrl } from '../config/api.js'
 import {
 	Car,
 	MapPin,
@@ -271,7 +272,7 @@ export default function WorkshopRequestsPage() {
 															<div className="flex items-center gap-1.5">
 																{customer?.image ? (
 																	<img 
-																		src={customer.image.startsWith('/uploads/') ? `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${customer.image}` : customer.image} 
+																		src={getFullUrl(customer.image)} 
 																		alt={customer?.name || 'Customer'} 
 																		className="w-5 h-5 rounded-full object-cover border border-gray-200 flex-shrink-0"
 																		onError={(e) => {

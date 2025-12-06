@@ -27,6 +27,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import { authAPI, requestsAPI, bookingsAPI, uploadAPI } from '../services/api'
+import { getFullUrl } from '../config/api.js'
 
 export default function CustomerProfilePage() {
 	const navigate = useNavigate()
@@ -83,11 +84,7 @@ export default function CustomerProfilePage() {
 				
 				// Convert relative URL to absolute URL if needed
 				if (imageUrl) {
-					if (imageUrl.startsWith('/uploads/')) {
-						const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
-						imageUrl = `${API_BASE_URL}${imageUrl}`
-					}
-					// If it's already a full URL, use it as is
+					imageUrl = getFullUrl(imageUrl)
 				}
 				
 				const profile = {
@@ -213,10 +210,7 @@ export default function CustomerProfilePage() {
 
 			if (imageUrl) {
 				// Convert relative URL to absolute URL if needed
-				if (imageUrl.startsWith('/uploads/')) {
-					const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
-					imageUrl = `${API_BASE_URL}${imageUrl}`
-				}
+				imageUrl = getFullUrl(imageUrl)
 				
 				// Update profile with new image
 				const userId = user._id || user.id

@@ -13,8 +13,11 @@ export default defineConfig({
 		port: 3000,
 		proxy: {
 			'/api': {
-				target: 'http://localhost:4000',
+				// ⚠️ Update this URL when your ngrok URL changes!
+				// Should match the URL in src/config/api.js
+				target: 'https://bridgett-appeasable-nonamenably.ngrok-free.dev',
 				changeOrigin: true,
+				secure: true,
 			},
 		},
 	},

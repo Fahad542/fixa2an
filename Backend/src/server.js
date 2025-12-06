@@ -28,7 +28,8 @@ app.use(cors({
 		: true, // Allow all origins in development
 	credentials: true,
 	methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-	allowedHeaders: ['Content-Type', 'Authorization'],
+	allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
+	exposedHeaders: ['Content-Type', 'Authorization'],
 }))
 
 app.use(express.json({ limit: '10mb' }))

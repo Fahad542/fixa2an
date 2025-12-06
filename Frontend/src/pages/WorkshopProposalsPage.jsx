@@ -25,6 +25,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import { offersAPI } from '../services/api'
+import { getFullUrl } from '../config/api.js'
 
 export default function WorkshopProposalsPage() {
 	const navigate = useNavigate()
@@ -334,7 +335,7 @@ export default function WorkshopProposalsPage() {
 													<h4 className="font-semibold text-xs sm:text-sm text-gray-900 mb-2.5 flex items-center gap-2">
 														{customer.image ? (
 															<img 
-																src={customer.image.startsWith('/uploads/') ? `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${customer.image}` : customer.image} 
+																src={getFullUrl(customer.image)} 
 																alt={customer.name || 'Customer'} 
 																className="w-6 h-6 rounded-full object-cover border-2 border-amber-200"
 																onError={(e) => {
@@ -352,7 +353,7 @@ export default function WorkshopProposalsPage() {
 														<div className="flex items-center gap-2">
 															{customer.image ? (
 																<img 
-																	src={customer.image.startsWith('/uploads/') ? `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${customer.image}` : customer.image} 
+																	src={getFullUrl(customer.image)} 
 																	alt={customer.name || 'Customer'} 
 																	className="w-8 h-8 rounded-full object-cover border-2 border-amber-200 flex-shrink-0"
 																	onError={(e) => {

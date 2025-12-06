@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import { offersAPI, bookingsAPI } from '../services/api'
+import { getFullUrl } from '../config/api.js'
 import {
 	Star,
 	MapPin,
@@ -260,7 +261,7 @@ export default function OffersPage() {
 												<div className="flex items-center gap-2 mb-1.5">
 													{workshop?.userId?.image || workshop?.user?.image ? (
 														<img 
-															src={(workshop?.userId?.image || workshop?.user?.image).startsWith('/uploads/') ? `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${workshop?.userId?.image || workshop?.user?.image}` : (workshop?.userId?.image || workshop?.user?.image)} 
+															src={getFullUrl(workshop?.userId?.image || workshop?.user?.image)} 
 															alt={workshop?.companyName || 'Workshop'} 
 															className="w-10 h-10 rounded-lg object-cover border-2 border-gray-200 flex-shrink-0 shadow-md"
 															onError={(e) => {

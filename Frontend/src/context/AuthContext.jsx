@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { authAPI } from '../services/api'
+import { getFullUrl } from '../config/api.js'
 
 const AuthContext = createContext(null)
 
@@ -21,9 +22,8 @@ export function AuthProvider({ children }) {
 			const response = await authAPI.getMe()
 			const userData = response.data
 			// Convert relative image URL to absolute if needed
-			if (userData?.image && userData.image.startsWith('/uploads/')) {
-				const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
-				userData.image = `${API_BASE_URL}${userData.image}`
+			if (userData?.image) {
+				userData.image = getFullUrl(userData.image)
 			}
 			setUser(userData)
 		} catch (error) {
